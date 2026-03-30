@@ -8,7 +8,7 @@ This workflow automates the addition of users to an Entra ID (Azure AD) group ba
 * **Managed Identity:** The Logic App must have a **System-Assigned Managed Identity** enabled.
 
 ## Deployment Steps
-1. Copy the contents of `Instant.json`.
+1. Copy the contents of `CodeView.json`.
 2. In Azure, create a **Logic App (Consumption)**.
 3. Go to **Logic App Designer** -> **Code View** and replace the JSON.
 4. Update the following parameters in the `Initialize variables` actions:
