@@ -11,6 +11,7 @@ A centralized repository for enterprise-grade Azure Logic App (Consumption) temp
 | **SecOps** | SecOps-NonUKAccess-Provisioning(Instant) | **SharePoint** (Create/Modify) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Instant) |
 | **SecOps** | SecOps-NonUKAccess-Provisioning(Scheduled) | **Recurrence** (Daily) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Scheduled) |
 | **SecOps** | SecOps-CredentialStorage-Compliance | **Sentinel Incident** (Update) | ✅ Stable | [Browse](./SecOps-CredentialStorage-Compliance) |
+| **SecOps** | SecOps-AutoClose-DLP | **Sentinel Incident** (Create) | ✅ Stable | [Browse](./SecOps-AutoClose-DLP) |
 | TBC | TBC | TBC | 🏗️ Testing | TBC |
 
 ---
