@@ -1,4 +1,4 @@
-# 🚀 Azure Logic Apps Library
+# 📚 Azure Logic Apps Library
 
 A centralized repository for enterprise-grade Azure Logic App (Consumption) templates, categorized by business function and trigger type.
 
@@ -15,7 +15,7 @@ A centralized repository for enterprise-grade Azure Logic App (Consumption) temp
 
 ---
 
-## 🏗️ Folder Hierarchy Explained
+## ℹ️ Folder Hierarchy Explained
 To make finding workflows easier, this library follows a strict naming convention:
 `Category-ProcessName / (Sub-Folder) / File.json`
 
@@ -45,5 +45,5 @@ Always use `<PLACEHOLDERS>` before uploading.
 
 ---
 
-## ⚖️ License
+## 🏛️ License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
