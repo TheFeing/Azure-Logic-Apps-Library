@@ -30,7 +30,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('2059d869-4830-41d5-85fb-229b6cf79902'))}/items",
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('YOUR_LIST_ID'))}/items",
                     "queries": {
                         "$filter": "FirstValidDate eq '@{utcNow('yyyy-MM-dd')}'"
                     }
@@ -249,7 +249,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('2059d869-4830-41d5-85fb-229b6cf79902'))}/items",
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('YOUR_LIST_ID'))}/items",
                     "queries": {
                         "$filter": "LastValidDate eq '@{addDays(utcNow(), -1, 'yyyy-MM-dd')}'"
                     }
