@@ -8,8 +8,8 @@ A centralized repository for enterprise-grade Azure Logic App (Consumption) temp
 
 | Category | Workflow Name | Trigger Type | Status | Path |
 | :--- | :--- | :--- | :--- | :--- |
-| **SecOps** | SecOps-NonUKAccess-Provisioning(Instant) | **Automated** (SharePoint) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Instant) |
-| **TBC** | TBC | TBC | 🏗️ Testing | TBC |
+| **SecOps** | SecOps-NonUKAccess-Provisioning(Instant) | **SharePoint** (Create/Modify) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Instant) |
+| **SecOps** | SecOps-NonUKAccess-Provisioning(Scheduled) | **Recurrence** (Daily) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Scheduled) |
 
 ---
 
