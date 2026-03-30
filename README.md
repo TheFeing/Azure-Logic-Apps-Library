@@ -10,13 +10,14 @@ A centralized repository for enterprise-grade Azure Logic App (Consumption) temp
 | :--- | :--- | :--- | :--- | :--- |
 | **SecOps** | SecOps-NonUKAccess-Provisioning(Instant) | **SharePoint** (Create/Modify) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Instant) |
 | **SecOps** | SecOps-NonUKAccess-Provisioning(Scheduled) | **Recurrence** (Daily) | ✅ Stable | [Browse](./SecOps-NonUKAccess-Provisioning/Scheduled) |
+| **SecOps** | SecOps-CredentialStorage-Compliance | **Sentinel Incident** (Update) | ✅ Stable | [Browse](./SecOps-CredentialStorage-Compliance) |
 | TBC | TBC | TBC | 🏗️ Testing | TBC |
 
 ---
 
 ## 🏗️ Folder Hierarchy Explained
 To make finding workflows easier, this library follows a strict naming convention:
-`Category-ProcessName / TriggerType / File.json`
+`Category-ProcessName / (Sub-Folder) / File.json`
 
 * **Category:** The department or functional area (e.g., SecOps, FinOps, IT).
 * **TriggerType:** How the app starts (e.g., `Instant` for manual buttons, `Recurrence` for schedules, `Webhook` for API calls).
@@ -25,7 +26,7 @@ To make finding workflows easier, this library follows a strict naming conventio
 
 ## 🚀 Deployment Guide
 1. **Pick a Workflow:** Navigate to the folder link in the table above.
-2. **Copy JSON:** Open the `.json` file (e.g., `Instant.json`) and copy the raw code.
+2. **Copy JSON:** Open the `.json` file (e.g., `CodeView.json`) and copy the raw code.
 3. **Create in Azure:** - Create a **Logic App (Consumption)** in your Azure Portal.
    - Open **Logic App Designer** and switch to **Code View**.
    - Paste the JSON over the existing code.
