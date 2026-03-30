@@ -1,0 +1,177 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "When_an_item_is_created_or_modified": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['sharepointonline-1']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://<YOUR_TENANT>.sharepoint.com/sites/<YOUR_SITE>'))}/tables/@{encodeURIComponent(encodeURIComponent('<YOUR_LIST_ID>'))}/onupdateditems"
+                },
+                "recurrence": {
+                    "interval": 5,
+                    "frequency": "Second",
+                    "timeZone": "GMT Standard Time"
+                },
+                "splitOn": "@triggerBody()?['value']"
+            }
+        },
+        "actions": {
+            "Get_user_profile_(V2)": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['office365users']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/codeless/v1.0/users/@{encodeURIComponent(triggerBody()?['UserUPN']?['Email'])}"
+                },
+                "runAfter": {
+                    "Initialize_variables": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variables": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "GroupID",
+                            "type": "string",
+                            "value": "<YOUR_TARGET_AD_GROUP_ID>"
+                        },
+                        {
+                            "name": "DateToday",
+                            "type": "string",
+                            "value": "@{formatDateTime(utcNow(), 'yyyy-MM-dd')}"
+                        },
+                        {
+                            "name": "BenignError",
+                            "type": "boolean",
+                            "value": true
+                        },
+                        {
+                            "name": "SubscriptionID",
+                            "type": "string",
+                            "value": "<YOUR_SUBSCRIPTION_ID>"
+                        },
+                        {
+                            "name": "WorkspaceID",
+                            "type": "string",
+                            "value": "<YOUR_LOG_ANALYTICS_WORKSPACE_ID>"
+                        },
+                        {
+                            "name": "ResourceGroup",
+                            "type": "string",
+                            "value": "<YOUR_RESOURCE_GROUP_NAME>"
+                        }
+                    ]
+                },
+                "runAfter": {}
+            },
+            "Terminate": {
+                "type": "Terminate",
+                "inputs": {
+                    "runStatus": "Succeeded"
+                },
+                "runAfter": {
+                    "Condition_-_BenignError": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Condition_-_ValidDate": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "lessOrEquals": [
+                                "@formatDateTime(triggerBody()?['FirstValidDate'], 'yyyy-MM-dd')",
+                                "@variables('DateToday')"
+                            ]
+                        },
+                        {
+                            "greaterOrEquals": [
+                                "@formatDateTime(triggerBody()?['LastValidDate'], 'yyyy-MM-dd')",
+                                "@variables('DateToday')"
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "HTTP_-_AddToGroup": {
+                        "type": "Http",
+                        "inputs": {
+                            "uri": "https://graph.microsoft.com/v1.0/groups/@{variables('GroupID')}/members/$ref",
+                            "method": "POST",
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "body": {
+                                "@@odata.id": "https://graph.microsoft.com/v1.0/directoryObjects/@{body('Get_user_profile_(V2)')?['id']}"
+                            },
+                            "authentication": {
+                                "type": "ManagedServiceIdentity",
+                                "audience": "https://graph.microsoft.com"
+                            }
+                        }
+                    },
+                    "Run_query_and_list_results_V2_-_GetAllDevices": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "query": "SigninLogs\n| where TimeGenerated >=ago(90d)\n| extend UPN_Lower = tolower(UserPrincipalName)\n| where UPN_Lower has_any (\"@{body('Get_user_profile_(V2)')?['mail']}\")\n| distinct UPN_Lower, DeviceName, DeviceID",
+                                "timerangetype": "3"
+                            },
+                            "path": "/queryDataV2",
+                            "queries": {
+                                "subscriptions": "<YOUR_SUBSCRIPTION_ID>",
+                                "resourcegroups": "<YOUR_RESOURCE_GROUP_NAME>",
+                                "resourcetype": "Log Analytics Workspace",
+                                "resourcename": "<YOUR_WORKSPACE_NAME>"
+                            }
+                        },
+                        "runAfter": {
+                            "Condition_-_FlagIsTrue": [
+                                "Succeeded"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "$connections": {
+                "type": "Object",
+                "defaultValue": {}
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "type": "Object",
+            "value": {
+                "sharepointonline-1": {
+                    "id": "/subscriptions/<YOUR_SUBSCRIPTION_ID>/providers/Microsoft.Web/locations/ukwest/managedApis/sharepointonline",
+                    "connectionId": "/subscriptions/<YOUR_SUBSCRIPTION_ID>/resourceGroups/<YOUR_RESOURCE_GROUP>/providers/Microsoft.Web/connections/sharepointonline",
+                    "connectionName": "sharepointonline"
+                }
+            }
+        }
+    }
+}
