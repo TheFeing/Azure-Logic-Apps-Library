@@ -12,7 +12,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('2059d869-4830-41d5-85fb-229b6cf79902'))}/onupdateditems"
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('YOUR_LIST_ID'))}/onupdateditems"
                 },
                 "recurrence": {
                     "interval": 5,
