@@ -12,7 +12,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://<YOUR_TENANT>.sharepoint.com/sites/<YOUR_SITE>'))}/tables/@{encodeURIComponent(encodeURIComponent('<YOUR_LIST_ID>'))}/onupdateditems"
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('YOUR_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('2059d869-4830-41d5-85fb-229b6cf79902'))}/onupdateditems"
                 },
                 "recurrence": {
                     "interval": 5,
@@ -47,7 +47,7 @@
                         {
                             "name": "GroupID",
                             "type": "string",
-                            "value": "<YOUR_TARGET_AD_GROUP_ID>"
+                            "value": "YOUR_GROUP_ID"
                         },
                         {
                             "name": "DateToday",
@@ -62,17 +62,17 @@
                         {
                             "name": "SubscriptionID",
                             "type": "string",
-                            "value": "<YOUR_SUBSCRIPTION_ID>"
+                            "value": "YOUR_SUBSCRIPTION_ID"
                         },
                         {
                             "name": "WorkspaceID",
                             "type": "string",
-                            "value": "<YOUR_LOG_ANALYTICS_WORKSPACE_ID>"
+                            "value": "YOUR_WORKSPACE_ID"
                         },
                         {
                             "name": "ResourceGroup",
                             "type": "string",
-                            "value": "<YOUR_RESOURCE_GROUP_NAME>"
+                            "value": "YOUR_RESOURCE_GROUP"
                         }
                     ]
                 },
@@ -123,6 +123,156 @@
                                 "type": "ManagedServiceIdentity",
                                 "audience": "https://graph.microsoft.com"
                             }
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            }
+                        }
+                    },
+                    "Condition_-_AlreadyAdded": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "contains": [
+                                        "@outputs('HTTP_-_AddToGroup')?['body']?['error']?['message']",
+                                        "One or more added object references already exist for the following modified properties: 'members'."
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {},
+                        "else": {
+                            "actions": {
+                                "Set_variable_-_UnknownError1": {
+                                    "type": "SetVariable",
+                                    "inputs": {
+                                        "name": "BenignError",
+                                        "value": false
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "HTTP_-_AddToGroup": [
+                                "Failed"
+                            ]
+                        }
+                    },
+                    "HTTP_-_GetPasswordResetFlag": {
+                        "type": "Http",
+                        "inputs": {
+                            "uri": "https://graph.microsoft.com/v1.0/users/@{body('Get_user_profile_(V2)')?['id']}?$select=passwordProfile",
+                            "method": "GET",
+                            "authentication": {
+                                "type": "ManagedServiceIdentity",
+                                "audience": "https://graph.microsoft.com"
+                            }
+                        },
+                        "runAfter": {
+                            "HTTP_-_AddToGroup": [
+                                "Succeeded",
+                                "Failed"
+                            ]
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            }
+                        }
+                    },
+                    "Condition_-_FlagIsTrue": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@body('HTTP_-_GetPasswordResetFlag')?['passwordProfile']?['forceChangePasswordNextSignIn']",
+                                        true
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "HTTP_-_RemoveFlag": {
+                                "type": "Http",
+                                "inputs": {
+                                    "uri": "https://graph.microsoft.com/v1.0/users/@{body('Get_user_profile_(V2)')?['id']}",
+                                    "method": "PATCH",
+                                    "body": {
+                                        "passwordProfile": {
+                                            "forceChangePasswordNextSignIn": false
+                                        }
+                                    },
+                                    "authentication": {
+                                        "type": "ManagedServiceIdentity",
+                                        "audience": "https://graph.microsoft.com"
+                                    }
+                                },
+                                "runtimeConfiguration": {
+                                    "contentTransfer": {
+                                        "transferMode": "Chunked"
+                                    }
+                                }
+                            },
+                            "Condition_-_NotEnoughPermission": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "contains": [
+                                                "@body('HTTP_-_RemoveFlag')?['error']?['message']",
+                                                "Insufficient privileges to complete the operation"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Post_message_in_a_chat_or_channel_-_NotEnoughPermission": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['teams']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "body": {
+                                                "recipient": "19:b4ff9f1f050f43289da0e83f95d08dd8@thread.v2",
+                                                "messageBody": "<p class=\"editor-paragraph\">Logic App \"<b><strong class=\"editor-text-bold\">SecOps-NonUKAccess-Provisioning(Instant)</strong></b>\" failed to set flag \"<b><strong class=\"editor-text-bold\">forceChangePasswordNextSignIn</strong></b>\" to due to insufficient privileges. It could be caused by:</p><br><p class=\"editor-paragraph\">- Target user is a privileged administrator.</p><p class=\"editor-paragraph\">- Flag modification is not permitted as it is dictated by on-prem AD.</p><p class=\"editor-paragraph\"><br>Visit <a href=\"https://portal.azure.com/#@YOUR_DOMAIN/resource/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Logic/workflows/SecOps-NonUKAccess-Provisioning(Instant)/runHistory\" class=\"editor-link\">this link</a> for more information.</p>"
+                                            },
+                                            "path": "/beta/teams/conversation/message/poster/Flow bot/location/@{encodeURIComponent('Group chat')}"
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {
+                                        "Set_variable_-_FlagNotRemovedError": {
+                                            "type": "SetVariable",
+                                            "inputs": {
+                                                "name": "BenignError",
+                                                "value": false
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "HTTP_-_RemoveFlag": [
+                                        "Failed"
+                                    ]
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {}
+                        },
+                        "runAfter": {
+                            "HTTP_-_GetPasswordResetFlag": [
+                                "Succeeded",
+                                "Skipped",
+                                "Failed"
+                            ]
                         }
                     },
                     "Run_query_and_list_results_V2_-_GetAllDevices": {
@@ -135,15 +285,15 @@
                             },
                             "method": "post",
                             "body": {
-                                "query": "SigninLogs\n| where TimeGenerated >=ago(90d)\n| extend UPN_Lower = tolower(UserPrincipalName)\n| where UPN_Lower has_any (\"@{body('Get_user_profile_(V2)')?['mail']}\")\n| distinct UPN_Lower, DeviceName, DeviceID",
+                                "query": "SigninLogs\n| where TimeGenerated >=ago(90d)\n| extend UPN_Lower = tolower(UserPrincipalName)\n| where UPN_Lower has_any (\n\"@{body('Get_user_profile_(V2)')?['mail']}\"\n)\n| extend DeviceName = tostring(DeviceDetail[\"displayName\"])\n| extend DeviceID = tostring(DeviceDetail[\"deviceId\"])\n| where DeviceName != \" \" and isnotempty(DeviceName)\n| where DeviceID != \" \" and isnotempty(DeviceID)\n| distinct  UPN_Lower, DeviceName, DeviceID",
                                 "timerangetype": "3"
                             },
                             "path": "/queryDataV2",
                             "queries": {
-                                "subscriptions": "<YOUR_SUBSCRIPTION_ID>",
-                                "resourcegroups": "<YOUR_RESOURCE_GROUP_NAME>",
+                                "subscriptions": "YOUR_SUBSCRIPTION_ID",
+                                "resourcegroups": "YOUR_RESOURCE_GROUP",
                                 "resourcetype": "Log Analytics Workspace",
-                                "resourcename": "<YOUR_WORKSPACE_NAME>"
+                                "resourcename": "YOUR_RESOURCE_GROUP"
                             }
                         },
                         "runAfter": {
@@ -151,10 +301,106 @@
                                 "Succeeded"
                             ]
                         }
+                    },
+                    "For_each": {
+                        "type": "Foreach",
+                        "foreach": "@body('Run_query_and_list_results_V2_-_GetAllDevices')?['value']",
+                        "actions": {
+                            "Watchlists_-_Add_a_new_Watchlist_Item": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                        }
+                                    },
+                                    "method": "put",
+                                    "body": {
+                                        "UserPrincipalName": "@{body('Get_user_profile_(V2)')?['mail']}",
+                                        "FirstValidDate": "@{triggerBody()?['FirstValidDate']}",
+                                        "LastValidDate": "@{triggerBody()?['LastValidDate']}",
+                                        "DeviceName": "@{items('For_each')?['DeviceName']}",
+                                        "DeviceID": "@{items('For_each')?['DeviceID']}",
+                                        "Country": "@{triggerBody()?['CountryCode_x0028_2Letter_x0029_']}",
+                                        "AddedBy": "SecOps-NonUKAccess-Provisioning(Scheduled)",
+                                        "Comment": "This is auto-added by [SecOps-NonUKAccess-Provisioning(Instant)] according to SharePoint list [YOUR_SHAREPOINT_LIST]"
+                                    },
+                                    "path": "/Watchlists/subscriptions/@{encodeURIComponent(variables('SubscriptionID'))}/resourceGroups/@{encodeURIComponent(variables('ResourceGroup'))}/workspaces/@{encodeURIComponent(variables('WorkspaceID'))}/watchlists/@{encodeURIComponent('YOUR_WATCHLIST')}/watchlistItem"
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Run_query_and_list_results_V2_-_GetAllDevices": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_variable_-_UnknownError2": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "BenignError",
+                            "value": false
+                        },
+                        "runAfter": {
+                            "For_each": [
+                                "Failed"
+                            ]
+                        }
                     }
+                },
+                "else": {
+                    "actions": {}
+                },
+                "runAfter": {
+                    "Get_user_profile_(V2)": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Condition_-_BenignError": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@variables('BenignError')",
+                                true
+                            ]
+                        }
+                    ]
+                },
+                "actions": {},
+                "else": {
+                    "actions": {
+                        "Post_message_in_a_chat_or_channel_-_UnknownError": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['teams']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "recipient": "19:b4ff9f1f050f43289da0e83f95d08dd8@thread.v2",
+                                    "messageBody": "<p class=\"editor-paragraph\">Logic App \"<b><strong class=\"editor-text-bold\">SecOps-NonUKAccess-Provisioning(Instant)</strong></b>\" encountered unknown errors.<br><br>Visit <a href=\"https://portal.azure.com/#@YOUR_DOMAIN/resource/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Logic/workflows/SecOps-NonUKAccess-Provisioning(Instant)/runHistory\" class=\"editor-link\">this link</a> for more information.</p>"
+                                },
+                                "path": "/beta/teams/conversation/message/poster/Flow bot/location/@{encodeURIComponent('Group chat')}"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Condition_-_ValidDate": [
+                        "Succeeded",
+                        "Skipped",
+                        "TimedOut",
+                        "Failed"
+                    ]
                 }
             }
         },
+        "outputs": {},
         "parameters": {
             "$connections": {
                 "type": "Object",
@@ -167,9 +413,34 @@
             "type": "Object",
             "value": {
                 "sharepointonline-1": {
-                    "id": "/subscriptions/<YOUR_SUBSCRIPTION_ID>/providers/Microsoft.Web/locations/ukwest/managedApis/sharepointonline",
-                    "connectionId": "/subscriptions/<YOUR_SUBSCRIPTION_ID>/resourceGroups/<YOUR_RESOURCE_GROUP>/providers/Microsoft.Web/connections/sharepointonline",
-                    "connectionName": "sharepointonline"
+                    "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/YOUR_LOCATION/managedApis/sharepointonline",
+                    "connectionId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Web/connections/sharepointonline-2",
+                    "connectionName": "sharepointonline-2",
+                    "connectionProperties": {}
+                },
+                "office365users": {
+                    "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/YOUR_LOCATION/managedApis/office365users",
+                    "connectionId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Web/connections/office365users-1",
+                    "connectionName": "office365users-1",
+                    "connectionProperties": {}
+                },
+                "teams": {
+                    "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/YOUR_LOCATION/managedApis/teams",
+                    "connectionId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Web/connections/teams-5",
+                    "connectionName": "teams-5",
+                    "connectionProperties": {}
+                },
+                "azuremonitorlogs": {
+                    "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/YOUR_LOCATION/managedApis/azuremonitorlogs",
+                    "connectionId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Web/connections/azuremonitorlogs-6",
+                    "connectionName": "azuremonitorlogs-6",
+                    "connectionProperties": {}
+                },
+                "azuresentinel": {
+                    "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/YOUR_LOCATION/managedApis/azuresentinel",
+                    "connectionId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Web/connections/azuresentinel-11",
+                    "connectionName": "azuresentinel-11",
+                    "connectionProperties": {}
                 }
             }
         }
